@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/davisepalmer/RideSafe/api/db"
 	"github.com/davisepalmer/RideSafe/api/server"
 	"os"
 )
@@ -15,5 +16,8 @@ func main() {
 	}
 	flag.Parse()
 	fmt.Println(environment)
+	fmt.Println("Starting Database...")
+	db.Initialize()
+	fmt.Println("Starting Server...")
 	server.Initialize()
 }

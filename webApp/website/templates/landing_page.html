@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .jumbotron {
+            background-color: #343a40;
+            color: #fff;
+            text-align: center;
+            padding: 100px 0;
+            margin-bottom: 0; /* Remove default margin bottom */
+        }
+        .about-section {
+            background-color: #fff;
+            padding: 50px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbar"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar">
+          <div class="navbar-nav">
+            <a class="nav-item nav-link" id="landing" href="/landing">Home</a>
+            {% if user and user.is_authenticated %}
+            <a class="nav-item nav-link" id="leaderboard" href="/">Leaderboard</a>
+            <a class="nav-item nav-link" id="logout" href="/logout">Logout</a>
+            {% else %}
+            <a class="nav-item nav-link" id="login" href="/login">Login</a>
+            <a class="nav-item nav-link" id="signUp" href="/sign-up">Sign Up</a>
+            {% endif %}
+          </div>
+        </div>
+      </nav>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="container">
+          <div class="row justify-content-center">
+              <div class="col-md-6">
+                  {% for category, message in messages %}
+                  <div class="alert alert-{{ category }}" role="alert">
+                      {{ message }}
+                  </div>
+                  {% endfor %}
+              </div>
+          </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+      
+    <!-- Jumbotron -->
+    <div class="jumbotron jumbotron-fluid"> <!-- Use jumbotron-fluid class -->
+        <div class="container-fluid"> <!-- Use container-fluid class to stretch across the screen -->
+            <h1>NAME TBD</h1>
+            <p class="lead" style="font-size: 16px;">See your driving history and how safe you are compared to other drivers</p>
+        </div>
+    </div>
+
+    <div class="about-section">
+        <div class="container">
+            <h2>About Us</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tempus odio ac quam eleifend, vitae gravida dui ultricies. Integer sollicitudin metus at arcu elementum consectetur. In hac habitasse platea dictumst. Proin ac nisi ac mauris auctor sollicitudin. Donec laoreet elit ut tellus consequat tincidunt. Nullam quis eros odio. Sed tristique, sem sed tincidunt congue, nisi nulla ultricies leo, at egestas velit nisi et justo. Nulla facilisi.</p>
+            <p>Etiam auctor tincidunt ex, vitae feugiat odio imperdiet ut. Nulla facilisi. Duis viverra feugiat turpis, id congue tortor eleifend sit amet. Morbi sit amet ante eget orci dapibus gravida. Nunc ut est justo. Sed non felis lobortis, vehicula elit ac, feugiat purus. Mauris feugiat odio ut arcu faucibus, non ultrices libero suscipit.</p>
+        </div>
+    </div>
+
+    <!-- Add more sections as needed -->
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>

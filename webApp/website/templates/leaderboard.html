@@ -13,14 +13,15 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
+                
                     {% set rank = 1 %}
                     {% for i in range(5) %}
+                        <tr>
                         <td>{{ i + 1 }}</td>
                         <td>{{ leaderboard[i][1] }}</td>
                         <td>{{ leaderboard[i][0] }}</td>
+                        </tr>
                     {% endfor %}
-                </tr>
             </tbody>
         </table>
 

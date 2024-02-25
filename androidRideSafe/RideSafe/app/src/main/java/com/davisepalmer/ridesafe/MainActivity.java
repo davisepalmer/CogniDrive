@@ -3,6 +3,7 @@ package com.davisepalmer.ridesafe;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+//import android.support.v4.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
@@ -36,15 +37,14 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.io.OutputStream;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -54,17 +54,20 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.MultipartBody;
+import androidx.core.content.ContextCompat;
+
+import android.content.res.ColorStateList;
 
 import java.io.FileInputStream;
 
 public class MainActivity extends AppCompatActivity {
-    private static String URL_TO_SERVER = "https://mintaio.com/upload";
+    private static String URL_TO_SERVER = "https://mintaio.com/driving";
 //    public static String URL_TO_SERVER = "https://www.toptal.com/developers/postbin/1708836087562-3955015260726";
     private static final String TAG = "AndroidCameraApi";
     private Button driveBtn;
     private TextureView textureView;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-
+    private boolean isDriving = false;
     private Handler mCaptureHandler;
     private HandlerThread mCaptureThread;
     private static final long CAPTURE_INTERVAL = 10 * 1000;
@@ -103,13 +106,39 @@ public class MainActivity extends AppCompatActivity {
             driveBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    startCaptureThread();
+                    if (!isDriving) {
+                        startDrive();
+                    } else {
+                        endDrive();
+                    }
                 }
             });
 
     }
 
+
+    private void startDrive() {
+        isDriving = true;
+        driveBtn.setText("End Drive");
+        // Set the background tint to red
+        int redColor = ContextCompat.getColor(this, R.color.red_color); // Assuming you have defined a red color in your colors.xml
+        driveBtn.setBackgroundTintList(ColorStateList.valueOf(redColor));
+        startCaptureThread();
+    }
+
+    private void endDrive() {
+        isDriving = false;
+        driveBtn.setText("Start Drive");
+        // Set the background tint to green
+        int greenColor = ContextCompat.getColor(this, R.color.green_color); // Assuming you have defined a green color in your colors.xml
+        driveBtn.setBackgroundTintList(ColorStateList.valueOf(greenColor));
+        stopCaptureThread();
+    }
+
+
+
     private void startCaptureThread() {
+
         mCaptureThread = new HandlerThread("CaptureThread");
         mCaptureThread.start();
         mCaptureHandler = new Handler(mCaptureThread.getLooper());

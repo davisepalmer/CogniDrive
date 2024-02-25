@@ -9,6 +9,7 @@ import (
 
 var hub *Hub
 var r *gin.Engine
+var jobs map[string]Job
 
 func Initialize() {
 	hub = &Hub{
@@ -18,6 +19,7 @@ func Initialize() {
 		Clients:    make(map[*Client]bool),
 		//jobs:       make([]Job, 100),
 	}
+	jobs = make(map[string]Job)
 	go hub.run()
 	fmt.Println("Starting Database...")
 	db.Initialize()

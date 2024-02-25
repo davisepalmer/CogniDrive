@@ -71,7 +71,13 @@ func (u UserController) Driving(c *gin.Context) string {
 		return ""
 	}
 	coord := url.QueryEscape(c.Request.Header["Coord"][0])
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Coordinates1"})
+		return ""
+	}
+
 	if coord == "" {
+		fmt.Println("womp womp1")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Coordinates"})
 		return ""
 	}
@@ -88,6 +94,7 @@ func (u UserController) Driving(c *gin.Context) string {
 	req, _ := http.NewRequest("GET", url, nil)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		fmt.Println("womp womp api")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get limit"})
 		return ""
 	}
@@ -96,7 +103,9 @@ func (u UserController) Driving(c *gin.Context) string {
 	body, _ := ioutil.ReadAll(res.Body)
 	limit, err := jsonparser.GetInt(body, "Response", "View", "[0]", "Result", "[0]", "Location", "LinkInfo", "SpeedLimit", "[0]", "Value")
 	if err != nil {
+		fmt.Println(string(body))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't read body"})
+		fmt.Println(err)
 		return ""
 	}
 

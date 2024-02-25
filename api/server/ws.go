@@ -3,8 +3,10 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"github.com/davisepalmer/RideSafe/api/db"
 	"github.com/gorilla/websocket"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -44,9 +46,12 @@ func (c *Client) read() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, []byte("\n"), []byte(" "), -1))
-		fmt.Println(string(message))
 		jobStatus := strings.Split(string(message), "=")
 		fmt.Println("Job ", jobStatus[0], "score:", jobStatus[1])
+		s, _ := strconv.Atoi(jobStatus[1])
+		if s != 0 {
+			db.AddScore(s, "john@gmail.com", jobs[jobStatus[0]].Token)
+		}
 	}
 }
 

@@ -1,12 +1,13 @@
 package server
 
 import (
+	"fmt"
 	"github.com/davisepalmer/RideSafe/api/controllers"
-	"github.com/davisepalmer/RideSafe/api/db"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var user controllers.UserController
@@ -30,13 +31,15 @@ func NewRouter() *gin.Engine {
 	})*/
 	router.POST("/driving", func(c *gin.Context) {
 		id := user.Driving(c)
+		job1 := strings.Split(id, "=")
+		fmt.Println(job1)
 		//c.Request.Header["email"][0]
 		//c.Request.Header["token"][0]
 		if id != "" {
 			for client := range hub.Clients {
 				client.send <- []byte(id)
 			}
-			db.AddScore(33, "john@gmail.com", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
+			jobs[job1[0]] = Job{Id: job1[0], Token: c.Request.Header["Token"][0]}
 		}
 	})
 

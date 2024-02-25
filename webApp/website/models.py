@@ -4,6 +4,7 @@ from flask_login import UserMixin
 import uuid
 import json
 
+
 # Connect to Redis
 #redis-14820.c322.us-east-1-2.ec2.cloud.redislabs.com:14820
 redis_client = redis.Redis(
@@ -13,11 +14,13 @@ redis_client = redis.Redis(
     password='2Uyb7SiEfayqazk74dJhN39xfrZBPb91')
 
 class User(UserMixin):
-    def __init__(self, email, password, first_name):
+    def __init__(self, email, password, first_name, access_token, scores, score_avg):
         self.email = email
         self.password = password
         self.first_name = first_name
-        self.access_token = access_token_generate
+        self.access_token = access_token
+        self.scores = scores
+        self.score_avg = score_avg
 
     @staticmethod
     def load_user(user_id):
@@ -75,7 +78,7 @@ class User(UserMixin):
             user = json.loads(redis_client.get(key))
             user['score_avg'] = sum(user['scores'].split(',')) / len(user['scores'].split(','))
             redis_client.set(key, json.dumps(user))
-            userlist.append((user['name'], user['email'], user['score_avg']))
+            userlist.append((user['name'], user['email'], user['score_avg']))   
         userlist.sort(key=lambda a: a[2])
         print(userlist)
 

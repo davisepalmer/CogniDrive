@@ -31,7 +31,7 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password_in = request.form.get('password')
-
+        
         user_id = redis_client.get(f'email:{email}')
         if user_id:
             user_data = redis_client.hgetall(f'user:{user_id.decode()}')
@@ -40,15 +40,12 @@ def login():
                 stored_password = decoded_user_data.get('password')
                 if stored_password is not None:
                     if check_password_hash(stored_password, password_in):
-                        # Check if 'id' exists before deleting it
-                        if 'id' in decoded_user_data:
-                            del decoded_user_data['id']
                         user = User(**decoded_user_data)
                         print(current_user.is_authenticated)
                         login_user(user, remember=True)  # Log in the user
                         print(current_user.is_authenticated)
                         flash('Logged in successfully!', category='success')
-                        return render_template('landing_page.html', user=current_user)
+                        return render_template('leaderboard.html', user=current_user)
                     else:
                         flash('Incorrect email or password. Please try again.', category='error')
                 else:
@@ -86,14 +83,15 @@ def sign_up():
             flash('First name must be greater than 1 character.', category='error')
         elif password1 != password2:
             flash('Passwords do not match.', category='error')
-        elif len(password1) < 7:
-            flash('Password must be at least 7 characters.', category='error')
+        elif len(password1) < 3:
+            flash('Password must be at least 3 characters.', category='error')
         else:
-            User.calc_averages()
+            score_list = ""
+            score_avg = 0.0
             access_token_generate = str(uuid.uuid1())
             user_id = redis_client.incr('user_id_counter')
             hashed_password = generate_password_hash(password1)
-            redis_client.hmset(f'user:{user_id}', {'email': email, 'password': hashed_password, 'first_name': first_name, 'access_token': access_token_generate})
+            redis_client.hmset(f'user:{user_id}', {'email': email, 'password': hashed_password, 'first_name': first_name, 'access_token': access_token_generate, 'scores': score_list, 'score_avg':score_avg}) 
             redis_client.set(f'email:{email}', user_id)
             flash('Account created successfully! You can now log in.', category='success')
             return redirect('/login')

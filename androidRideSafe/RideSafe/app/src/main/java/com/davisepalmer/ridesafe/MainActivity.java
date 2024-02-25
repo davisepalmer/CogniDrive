@@ -7,6 +7,8 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -26,6 +28,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.PersistableBundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -34,6 +38,8 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import android.app.Dialog;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -45,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.io.OutputStream;
+import android.net.Uri;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -58,9 +65,23 @@ import androidx.core.content.ContextCompat;
 
 import android.content.res.ColorStateList;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.karumi.dexter.Dexter;
+
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
+import com.google.android.gms.maps.MapView;
+
+
 import java.io.FileInputStream;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static String URL_TO_SERVER = "https://mintaio.com/driving";
 //    public static String URL_TO_SERVER = "https://www.toptal.com/developers/postbin/1708836087562-3955015260726";
     private static final String TAG = "AndroidCameraApi";
@@ -91,16 +112,26 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
-
-
+    boolean isPermissionGranted;
+    MapView mapView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         textureView = findViewById(R.id.texture);
+        mapView=findViewById(R.id.mapView);
         if(textureView != null)
             textureView.setSurfaceTextureListener(textureListener);
-
+    checkPermission();
+    if (isPermissionGranted) {
+        if(checkGooglePlayServices()) {
+            Toast.makeText(this, "Google Play Services Available.", Toast.LENGTH_SHORT).show();
+            mapView.getMapAsync(this);
+            mapView.onCreate(savedInstanceState);
+        }else {
+            Toast.makeText(this, "Google Play Services NOT Avaliable", Toast.LENGTH_SHORT).show();
+        }
+    }
         driveBtn = findViewById(R.id.driveBtn);
         if(driveBtn != null)
             driveBtn.setOnClickListener(new View.OnClickListener() {
@@ -116,12 +147,53 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private boolean checkGooglePlayServices() {
+        GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
+        int result = googleApiAvailability.isGooglePlayServicesAvailable(this);
+        if(result == ConnectionResult.SUCCESS) {
+            return true;
+        }
+        else if (googleApiAvailability.isUserResolvableError(result)) {
+            Dialog dialog=googleApiAvailability.getErrorDialog(this, result, 201, new DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(DialogInterface dialogInterface) {
+                    Toast.makeText(MainActivity.this, "User canceled dialog", Toast.LENGTH_SHORT).show();
+                }
+            });
+            dialog.show();
+        }
+        return false;
+    }
+
+    private void checkPermission() {
+        Dexter.withContext(this).withPermission(Manifest.permission.ACCESS_FINE_LOCATION).withListener(new PermissionListener() {
+            @Override
+            public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
+                isPermissionGranted = true;
+                //Toast?
+            }
+
+            @Override
+            public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
+                Intent intent = new Intent();
+                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                Uri uri = Uri.fromParts("package",getPackageResourcePath(), "");
+                intent.setData(uri);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken permissionToken) {
+                permissionToken.continuePermissionRequest();
+            }
+        }).check();
+    }
 
     private void startDrive() {
         isDriving = true;
         driveBtn.setText("End Drive");
         // Set the background tint to red
-        int redColor = ContextCompat.getColor(this, R.color.red_color); // Assuming you have defined a red color in your colors.xml
+        int redColor = ContextCompat.getColor(this, R.color.red_color);
         driveBtn.setBackgroundTintList(ColorStateList.valueOf(redColor));
         startCaptureThread();
     }
@@ -130,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
         isDriving = false;
         driveBtn.setText("Start Drive");
         // Set the background tint to green
-        int greenColor = ContextCompat.getColor(this, R.color.green_color); // Assuming you have defined a green color in your colors.xml
+        int greenColor = ContextCompat.getColor(this, R.color.green_color);
         driveBtn.setBackgroundTintList(ColorStateList.valueOf(greenColor));
         stopCaptureThread();
     }
@@ -156,6 +228,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         stopCaptureThread();
+        mapView.onDestroy();
+
     }
 
     private void stopCaptureThread() {
@@ -362,6 +436,7 @@ protected void takePicture() {
         // Create the request
         Request request = new Request.Builder()
                 .url(URL_TO_SERVER)
+                .addHeader("coord", "30.616491, -96.320812")
                 .post(requestBody)
                 .build();
 
@@ -530,6 +605,8 @@ protected void takePicture() {
         } else {
             textureView.setSurfaceTextureListener(textureListener);
         }
+        mapView.onResume(); //SKETCHY
+
     }
 
     @Override
@@ -538,5 +615,45 @@ protected void takePicture() {
         //closeCamera();
         stopBackgroundThread();
         super.onPause();
+        mapView.onPause();
+
     }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+
+
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mapView.onStop();
+
+    }
+
+
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+        mapView.onSaveInstanceState(outState);
+
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+
+    }
+
+
 }

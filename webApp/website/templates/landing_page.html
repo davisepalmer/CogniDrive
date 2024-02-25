@@ -2,18 +2,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homepage</title>
+    <title>Home</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f8f9fa;
-            color: #333;
+            color: #333333;
             margin: 0;
             padding: 0;
         }
         .jumbotron {
-            background-color: #343a40;
+            background-color: #2e5b9f;
             color: #fff;
             text-align: center;
             padding: 100px 0;
@@ -27,7 +27,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <button
           class="navbar-toggler"
           type="button"
@@ -69,19 +69,103 @@
     <!-- Jumbotron -->
     <div class="jumbotron jumbotron-fluid"> <!-- Use jumbotron-fluid class -->
         <div class="container-fluid"> <!-- Use container-fluid class to stretch across the screen -->
-            <h1>NAME TBD</h1>
-            <p class="lead" style="font-size: 16px;">See your driving history and how safe you are compared to other drivers</p>
+            <h1>Welcone to RideSafe</h1>
+            <p class="lead" style="font-size: 16px;">Easily have your driving analyzed for safety and how you compare</p>
         </div>
     </div>
+    <style>
+        /* CSS to reset default margin and padding */
+        body, html {
+            margin: 0;
+            padding: 0;
+        }
 
+        /* CSS to style the box */
+        .box {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden; /* Ensure the image doesn't overflow */
+            color: white; /* Text color */
+            font-size: 18px; /* Text size */
+            text-align: center; /* Center text horizontally */
+            line-height: 200px; /* Center text vertically */
+        }
+
+        /* CSS to style the overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Adjust the last value (alpha) for transparency */
+            z-index: 1; /* Ensure the overlay appears above the image */
+        }
+
+        /* CSS to style the image */
+        .box-image {
+            width: 100%;
+            height: 100%;
+            background-image: url('static/imagecar.png');
+            background-size: cover; /* Ensure the image covers the entire box */
+            background-position: center; /* Center the image within the box */
+            z-index: 0; /* Ensure the image appears below the overlay */
+        }
+
+        .box-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2; /* Ensure the text appears above the overlay */
+        }
+    </style>
     <div class="about-section">
         <div class="container">
-            <h2>About Us</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tempus odio ac quam eleifend, vitae gravida dui ultricies. Integer sollicitudin metus at arcu elementum consectetur. In hac habitasse platea dictumst. Proin ac nisi ac mauris auctor sollicitudin. Donec laoreet elit ut tellus consequat tincidunt. Nullam quis eros odio. Sed tristique, sem sed tincidunt congue, nisi nulla ultricies leo, at egestas velit nisi et justo. Nulla facilisi.</p>
-            <p>Etiam auctor tincidunt ex, vitae feugiat odio imperdiet ut. Nulla facilisi. Duis viverra feugiat turpis, id congue tortor eleifend sit amet. Morbi sit amet ante eget orci dapibus gravida. Nunc ut est justo. Sed non felis lobortis, vehicula elit ac, feugiat purus. Mauris feugiat odio ut arcu faucibus, non ultrices libero suscipit.</p>
+            <h2>What we are</h2>
+            <p>
+                RideSafe is a safe driving platform where users have the ability 
+                to use their phone in place of a dashcam to get data about their safe-driving
+                habits. The data is analyzed into a simple score where the user can see how 
+                their driving compares to others. 
+                
+            </p>
         </div>
     </div>
+    <div class="box">
+        <div class="overlay"></div>
+        <div class="box-image"></div>
+        <div class="box-text" id="typewriter"></div>
+    </div>
 
+    <script>
+        // JavaScript for typewriter effect
+        const text = "A new way to see your safety"; // Replace with your desired text
+        const delay = 50; // Delay between each character (milliseconds)
+        let i = 0;
+
+        function typeWriter() {
+            if (i < text.length) {
+                document.getElementById("typewriter").innerHTML += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, delay);
+            }
+        }
+
+        typeWriter(); // Start typewriter effect
+    </script>
+
+    <div class="container">
+        <p>
+            <br></br>
+            Ridesafe is built to be applicable in a variety of different 
+            scenarios from average users getting a safety score, to a 
+            corporation utilizing fleet management. The full-stack
+            implementation creates a plaform for users to have a readily-available 
+            
+        </p>
+    </div>
     <!-- Add more sections as needed -->
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>

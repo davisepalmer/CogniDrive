@@ -3,7 +3,7 @@
     <div class="container mt-4">
         <h2>Welcome, {{ user.first_name }}!</h2>
         <h3>Leaderboard</h3>
-        <p>National Ranks</p>
+        <br></br>
         <table class="table">
             <thead>
                 <tr>
@@ -15,7 +15,7 @@
             <tbody>
                 
                     {% set rank = 1 %}
-                    {% for i in range(10) %}
+                    {% for i in range(5) %}
                         <tr>
                         <td>{{ i + 1 }}</td>
                         <td>{{ leaderboard[i][1] }}</td>
@@ -27,16 +27,15 @@
 
 
         
-        
-        {{state_rank_size}}
-        {{stateboard[0]}}
-        
+
         <br></br>
         <h3>Your Score</h3>
         <p>Your current score: {{ user.score_avg }}</p>
 
+        <h3>Average Score of All Users</h3>
+        <p>{{ average }}</p>
+
         <!-- Additional content and functionality as needed -->
     </div>
 
-    <p>Reload page to show changes</p>
 {% endblock %}

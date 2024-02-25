@@ -1,15 +1,17 @@
 package controllers
 
 import (
-	"bytes"
-	"encoding/base64"
-	"errors"
 	"fmt"
+	"github.com/buger/jsonparser"
 	"github.com/gin-gonic/gin"
-	"image"
+	"github.com/google/uuid"
+	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"net/url"
+	"os"
+	"strconv"
+	"time"
 )
 
 var appId = "sJ144gmf7ZZQnBrsUGlF"
@@ -21,25 +23,64 @@ type status struct {
 }
 type UserController struct{}
 
-func (u UserController) Driving(c *gin.Context) {
+func (u UserController) Driving(c *gin.Context) string {
 	//Input Validation
-	bBody, _ := ioutil.ReadAll(c.Request.Body)
-	imageData := strings.Split(string(bBody), "image=")[1]
-	disk, err := saveImageToDisk("test-1.jpg", imageData)
+	jobId := uuid.New().String()
+
+	var r *http.Request = c.Request
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
+		fmt.Println(1)
 		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Error saving file"})
-		return
-	}
-	fmt.Println(disk)
-	/*if image == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Image"})
-		return
+		return ""
 	}
-	coord := url.QueryEscape(c.PostForm("coord"))
+
+	file, _, err := r.FormFile("myFile")
+	if err != nil {
+		fmt.Println(2)
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Image"})
+		return ""
+	}
+
+	defer file.Close()
+	dst, err := os.Create("./python/temp/" + jobId + ".jpg")
+	if err != nil {
+		fmt.Println(3)
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Image"})
+		return ""
+	}
+	go func() {
+		time.Sleep(60 * time.Second)
+		e := os.Remove("./python/temp/" + jobId + ".jpg")
+		if e != nil {
+			fmt.Println(e)
+		}
+	}()
+
+	defer dst.Close()
+
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		fmt.Println(4)
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Image"})
+		return ""
+	}
+	coord := url.QueryEscape(c.Request.Header["Coord"][0])
 	if coord == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Coordinates"})
-		return
+		return ""
+	}
+
+	speed, err := strconv.ParseFloat(c.Request.Header["Speed"][0], 32)
+	if err != nil || speed < 10 {
+		fmt.Println("womp womp")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Speed"})
+		return ""
 	}
 
 	//API Request
@@ -48,7 +89,7 @@ func (u UserController) Driving(c *gin.Context) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get limit"})
-		return
+		return ""
 	}
 
 	defer res.Body.Close()
@@ -56,34 +97,10 @@ func (u UserController) Driving(c *gin.Context) {
 	limit, err := jsonparser.GetInt(body, "Response", "View", "[0]", "Result", "[0]", "Location", "LinkInfo", "SpeedLimit", "[0]", "Value")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't read body"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"limit": limit})*/
-	c.JSON(http.StatusOK, gin.H{"limit": 10})
-}
-
-func saveImageToDisk(fileNameBase, data string) (string, error) {
-	idx := strings.Index(data, ";base64,")
-	if idx < 0 {
-		return "", errors.New("Invalid image")
-	}
-	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(data[idx+8:]))
-	buff := bytes.Buffer{}
-	_, err := buff.ReadFrom(reader)
-	if err != nil {
-		return "", err
-	}
-	imgCfg, fm, err := image.DecodeConfig(bytes.NewReader(buff.Bytes()))
-	if err != nil {
-		return "", err
+		return ""
 	}
 
-	if imgCfg.Width != 750 || imgCfg.Height != 685 {
-		return "", errors.New("Invalid size")
-	}
-
-	fileName := fileNameBase + "." + fm
-	ioutil.WriteFile(fileName, buff.Bytes(), 0644)
-
-	return fileName, err
+	//limit := 10
+	c.JSON(http.StatusOK, gin.H{"limit": limit})
+	return jobId + "=" + strconv.Itoa(int(limit)) + "=" + strconv.Itoa(int(speed))
 }

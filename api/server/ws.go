@@ -22,11 +22,11 @@ type Job struct {
 }
 
 type Hub struct {
-	clients    map[*Client]bool
+	Clients    map[*Client]bool
 	broadcast  chan []byte
 	register   chan *Client
 	unregister chan *Client
-	jobs       []Job
+	//jobs       []Job
 }
 
 func (c *Client) read() {
@@ -47,5 +47,44 @@ func (c *Client) read() {
 		fmt.Println(string(message))
 		jobStatus := strings.Split(string(message), "=")
 		fmt.Println("Job ", jobStatus[0], "score:", jobStatus[1])
+	}
+}
+
+func (c *Client) write() {
+	ticker := time.NewTicker(60 * time.Second * 9 / 10)
+	defer func() {
+		ticker.Stop()
+		c.conn.Close()
+	}()
+	for {
+		select {
+		case message, ok := <-c.send:
+			if !ok {
+				// The hub closed the channel.
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := c.conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			w.Write(message)
+
+			// Add queued chat messages to the current websocket message.
+			n := len(c.send)
+			for i := 0; i < n; i++ {
+				w.Write([]byte("\n"))
+				w.Write(<-c.send)
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
 	}
 }

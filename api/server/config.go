@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/davisepalmer/RideSafe/api/controllers"
+	"github.com/davisepalmer/RideSafe/api/db"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
@@ -20,7 +21,6 @@ func NewRouter() *gin.Engine {
 	router.LoadHTMLGlob("*.html")
 	//Initialize controllers
 	user = controllers.UserController{}
-	leaderboard = controllers.LeaderboardController{}
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "home.html", nil)
@@ -28,16 +28,21 @@ func NewRouter() *gin.Engine {
 	/*router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Hello World!")
 	})*/
-	router.POST("/driving", user.Driving)
+	router.POST("/driving", func(c *gin.Context) {
+		id := user.Driving(c)
+		//c.Request.Header["email"][0]
+		//c.Request.Header["token"][0]
+		if id != "" {
+			for client := range hub.Clients {
+				client.send <- []byte(id)
+			}
+			db.AddScore(33, "john@gmail.com", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
+		}
+	})
 
 	router.GET("/testjob", func(c *gin.Context) {
-		for client := range hub.clients {
-			select {
-			case client.send <- []byte("test2.jpg"):
-			default:
-				close(client.send)
-				delete(hub.clients, client)
-			}
+		for client := range hub.Clients {
+			client.send <- []byte("test2.jpg")
 		}
 	})
 
@@ -51,6 +56,7 @@ func NewRouter() *gin.Engine {
 		client.hub.register <- client
 
 		go client.read()
+		go client.write()
 	})
 
 	return router

@@ -1,31 +1,27 @@
-# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Run YOLOv5 detection inference on images, videos, directories, globs, YouTube, webcam, streams, etc.
+Run inference on images, videos, directories, streams, etc.
 
 Usage - sources:
-    $ python detect.py --weights yolov5s.pt --source 0                               # webcam
-                                                     img.jpg                         # image
-                                                     vid.mp4                         # video
-                                                     screen                          # screenshot
-                                                     path/                           # directory
-                                                     list.txt                        # list of images
-                                                     list.streams                    # list of streams
-                                                     'path/*.jpg'                    # glob
-                                                     'https://youtu.be/LNwODJXcvt4'  # YouTube
-                                                     'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+    $ python path/to/detect.py --weights yolov5s.pt --source 0              # webcam
+                                                             img.jpg        # image
+                                                             vid.mp4        # video
+                                                             path/          # directory
+                                                             path/*.jpg     # glob
+                                                             'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                                             'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
 Usage - formats:
-    $ python detect.py --weights yolov5s.pt                 # PyTorch
-                                 yolov5s.torchscript        # TorchScript
-                                 yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                 yolov5s_openvino_model     # OpenVINO
-                                 yolov5s.engine             # TensorRT
-                                 yolov5s.mlmodel            # CoreML (macOS-only)
-                                 yolov5s_saved_model        # TensorFlow SavedModel
-                                 yolov5s.pb                 # TensorFlow GraphDef
-                                 yolov5s.tflite             # TensorFlow Lite
-                                 yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
-                                 yolov5s_paddle_model       # PaddlePaddle
+    $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
+                                         yolov5s.torchscript        # TorchScript
+                                         yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                         yolov5s.xml                # OpenVINO
+                                         yolov5s.engine             # TensorRT
+                                         yolov5s.mlmodel            # CoreML (macOS-only)
+                                         yolov5s_saved_model        # TensorFlow SavedModel
+                                         yolov5s.pb                 # TensorFlow GraphDef
+                                         yolov5s.tflite             # TensorFlow Lite
+                                         yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
 """
 
 from utils.torch_utils import select_device, time_sync
@@ -47,7 +43,6 @@ from sklearn.preprocessing import StandardScaler
 
 
 # define the name of the directory to be created
-
 with open('results/data/data.csv', 'w', encoding='utf-8', newline='') as csvFile:
     writer = csv.writer(csvFile)
     writer.writerow(['frame', 'xmin', 'ymin', 'xmax', 'ymax', 'scaled_xmin',
@@ -59,19 +54,19 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+
 @torch.no_grad()
 def run(
-        weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
-        weights_dist=ROOT / 'model@1535470106.h5',
-        model_dist = ROOT / 'model@1535470106.json',
-        source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
-        data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        
+    source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
 ):
-    imgsz=(1836, 1836),  # inference size (height, width)
+    weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
+    weights_dist=ROOT / 'model@1535470106.h5',
+    model_dist = ROOT / 'model@1535470106.json',
+    data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
+    imgsz=(640, 640),  # inference size (height, width)
     conf_thres=0.25,  # confidence threshold
     iou_thres=0.45,  # NMS IOU threshold
-    max_det=10,  # maximum detections per image
+    max_det=1000,  # maximum detections per image
     device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
     view_img=False,  # show results
     save_txt=False,  # save results to *.txt
@@ -80,6 +75,8 @@ def run(
     nosave=False,  # do not save images/videos
     classes=None,  # filter by class: --class 0, or --class 0 2 3
     agnostic_nms=False,  # class-agnostic NMS
+    augment=False,  # augmented inference
+    visualize=False,  # visualize features
     update=False,  # update all models
     project=ROOT / 'runs/detect',  # save results to project/name
     name='exp',  # save results to project/name
@@ -89,14 +86,18 @@ def run(
     hide_conf=False,  # hide confidences
     half=False,  # use FP16 half-precision inference
     dnn=False,  # use OpenCV DNN for ONNX inference
-    carlist = []
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
+    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
+    webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file)
+    if is_url and is_file:
+        source = check_file(source)  # download
+
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
+    carlist = []
     # Load model
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
@@ -127,7 +128,6 @@ def run(
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
-            seen += 1
             p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
@@ -208,4 +208,5 @@ def run(
     print(most_center)
     return most_center
 
-
+def detectDistance(imgsource):
+    return run(source = imgsource) 

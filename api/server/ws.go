@@ -29,7 +29,7 @@ type Hub struct {
 	jobs       []Job
 }
 
-func (c *Client) readPump() {
+func (c *Client) read() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -47,6 +47,5 @@ func (c *Client) readPump() {
 		fmt.Println(string(message))
 		jobStatus := strings.Split(string(message), "=")
 		fmt.Println("Job ", jobStatus[0], "score:", jobStatus[1])
-		//c.hub.broadcast <- message
 	}
 }

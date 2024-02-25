@@ -85,7 +85,6 @@ func addScore(score int, email string, token string) error {
 	}
 
 	avg := fmt.Sprintf("%.2f", float32(total)/float32(len(s)))
-	fmt.Println(avg)
 	err = DB.Client.HSet(DB.Ctx, "user:"+userId, "score_avg", avg).Err()
 	if err != nil {
 		fmt.Println(err)

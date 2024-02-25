@@ -20,8 +20,8 @@ def getLeaderboard():
         #print(user_data)
         decoded_user_data = {key.decode(): value.decode() for key, value in user_data.items()}
         score = decoded_user_data.get('score_avg')
-        userlist.append((int(str(decoded_user_data.get('score_avg'))),decoded_user_data.get('first_name')))
-        userlist.sort(key=lambda a: a[0])
+        userlist.append((float(str(decoded_user_data.get('score_avg'))),decoded_user_data.get('first_name')))
+        userlist.sort(key=lambda a: a[0], reverse=True)
     return userlist
 
 @views.route('/leaderboard')

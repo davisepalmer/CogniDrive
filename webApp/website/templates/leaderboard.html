@@ -13,10 +13,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% set rank = 1 %}
-                {% for i in range(5) %}
-                    <p>User ID: {{ leaderboard[i][1] }}, Score: {{ leaderboard[i][0] }}</p>
-                {% endfor %}
+                <tr>
+                    {% set rank = 1 %}
+                    {% for i in range(5) %}
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ leaderboard[i][1] }}</td>
+                        <td>{{ leaderboard[i][0] }}</td>
+                    {% endfor %}
+                </tr>
             </tbody>
         </table>
 

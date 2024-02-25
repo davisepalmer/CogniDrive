@@ -21,8 +21,8 @@ def create_app(redis_client):
     from .auth import auth
 
     app.redis_client = redis_client
-    app.register_blueprint(auth)
     app.register_blueprint(views)
+    app.register_blueprint(auth)
 
     from .models import User, Leaderboard
 

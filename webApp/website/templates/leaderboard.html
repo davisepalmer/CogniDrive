@@ -14,8 +14,8 @@
             </thead>
             <tbody>
                 {% set rank = 1 %}
-                {% for user_id score in leaderboard %}
-                <li>{{ user_id }} - Score: {{ score }}</li>
+                {% for user_id, score in leaderboard %}
+                    <p>User ID: {{ user_id }}, Score: {{ score }}</p>
                 {% endfor %}
             </tbody>
         </table>

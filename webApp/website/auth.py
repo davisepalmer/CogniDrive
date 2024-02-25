@@ -1,39 +1,68 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, login_required, logout_user, current_user
+from flask_login import login_user, login_required, logout_user, current_user 
 import redis
+import json
+import uuid
+
+landing_bp = Blueprint('landing', __name__)
+
+@landing_bp.route('/landing')
+def landing_page():
+    return render_template('landing_page.html', user=current_user)
+
 
 redis_client = redis.Redis(
     host='redis-14820.c322.us-east-1-2.ec2.cloud.redislabs.com', 
     port=14820, 
     db=0,
-    password='2Uyb7SiEfayqazk74dJhN39xfrZBPb91')
+    password='2Uyb7SiEfayqazk74dJhN39xfrZBPb91',
+    decode_responses=True
+    )
 
 auth = Blueprint('auth', __name__)
-# def init_auth(redis_client):
+
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     redis_client = current_app.redis_client
+    email = None  # Default value
+
     if request.method == 'POST':
         email = request.form.get('email')
-        password = request.form.get('password')
+        password_in = request.form.get('password')
 
         user_id = redis_client.get(f'email:{email}')
         if user_id:
             user_data = redis_client.hgetall(f'user:{user_id.decode()}')
-            if user_data and check_password_hash(user_data.get('password'), password):
-                user = User(**user_data)
-                login_user(user, remember=True)
-                flash('Logged in successfully!', category='success')
-                return redirect('/landing')
+            decoded_user_data = {key.decode(): value.decode() for key, value in user_data.items()}
+            if user_data:
+                stored_password = decoded_user_data.get('password')
+                if stored_password is not None:
+                    if check_password_hash(stored_password, password_in):
+                        # Check if 'id' exists before deleting it
+                        if 'id' in decoded_user_data:
+                            del decoded_user_data['id']
+                        user = User(**decoded_user_data)
+                        print(current_user.is_authenticated)
+                        login_user(user, remember=True)  # Log in the user
+                        print(current_user.is_authenticated)
+                        flash('Logged in successfully!', category='success')
+                        return render_template('landing_page.html', user=current_user)
+                    else:
+                        flash('Incorrect email or password. Please try again.', category='error')
+                else:
+                    flash('Password not found for this user.', category='error')
             else:
-                flash('Incorrect email or password. Please try again.', category='error')
+                flash('User data not found.', category='error')
         else:
             flash('Email does not exist.', category='error')
 
-    return render_template("login.html", email=current_user.email)
-
+    # Render the login template for GET requests
+    return render_template('login.html', email=email)
+        # Only pass email to the template if the user is logged in
+        # email = current_user.email if current_user.is_authenticated else None
+        # return render_template("login.html", email=email)
 @auth.route('/logout')
 @login_required
 def logout():
@@ -60,9 +89,11 @@ def sign_up():
         elif len(password1) < 7:
             flash('Password must be at least 7 characters.', category='error')
         else:
+            User.calc_averages()
+            access_token_generate = str(uuid.uuid1())
             user_id = redis_client.incr('user_id_counter')
             hashed_password = generate_password_hash(password1)
-            redis_client.hmset(f'user:{user_id}', {'id': user_id, 'email': email, 'password': hashed_password, 'first_name': first_name})
+            redis_client.hmset(f'user:{user_id}', {'email': email, 'password': hashed_password, 'first_name': first_name, 'access_token': access_token_generate})
             redis_client.set(f'email:{email}', user_id)
             flash('Account created successfully! You can now log in.', category='success')
             return redirect('/login')

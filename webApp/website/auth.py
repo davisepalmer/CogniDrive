@@ -76,7 +76,6 @@ def sign_up():
         first_name = request.form.get('firstName')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
-        user_location = request.form.get('state')
 
         # #check password
         upper = False
@@ -109,12 +108,11 @@ def sign_up():
             score_avg = 0.0
             access_token_generate = str(uuid.uuid1())
             user_id = email
-            string_location = str(user_location)
             hashed_password = generate_password_hash(password1)
-            redis_client.hmset(f'user:{user_id}', {'email': email, 'password': hashed_password, 'first_name': first_name, 'access_token': access_token_generate, 'scores': score_list, 'score_avg':score_avg, 'location': string_location}) 
+            redis_client.hmset(f'user:{user_id}', {'email': email, 'password': hashed_password, 'first_name': first_name, 'access_token': access_token_generate, 'scores': score_list, 'score_avg':score_avg}) 
             redis_client.set(f'email:{email}', user_id)
             flash('Account created successfully! You can now log in.', category='success')
-            newUser = User(email, hashed_password, first_name, access_token_generate, score_list, score_avg, string_location)
+            newUser = User(email, hashed_password, first_name, access_token_generate, score_list, score_avg)
             login_user(newUser, remember=True)
             return redirect('/landing')
     

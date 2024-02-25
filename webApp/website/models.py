@@ -14,14 +14,13 @@ redis_client = redis.Redis(
     password='2Uyb7SiEfayqazk74dJhN39xfrZBPb91')
 
 class User(UserMixin):
-    def __init__(self, email, password, first_name, access_token, scores, score_avg, location):
+    def __init__(self, email, password, first_name, access_token, scores, score_avg):
         self.email = email
         self.password = password
         self.first_name = first_name
         self.access_token = access_token
         self.scores = scores
         self.score_avg = score_avg
-        self.location = location
         #pass IOHB89n
 
     @staticmethod
@@ -54,8 +53,6 @@ class User(UserMixin):
     def get_id(self):
         return self.email
 
-    def get_loc(self):
-        return self.location
 
     def save(self):
         # Check if email is unique
@@ -73,7 +70,6 @@ class User(UserMixin):
             'access_token': self.access_token,
             'scores': self.scores,
             'score_avg': self.score_avg,
-            'location': self.location
         }
         redis_client.hmset(f'user:{self.email}', user_data)
         

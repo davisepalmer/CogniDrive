@@ -108,7 +108,7 @@ import java.io.FileInputStream;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static String URL_TO_SERVER = "https://mintaio.com/driving";
-//        public static String URL_TO_SERVER = "https://www.toptal.com/developers/postbin/1708862551773-7041264297440";
+    //        public static String URL_TO_SERVER = "https://www.toptal.com/developers/postbin/1708872010569-0208476344123";
     private static final String TAG = "AndroidCameraApi";
     private Button driveBtn;
     private TextureView textureView;
@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Handler mCaptureHandler;
     private HandlerThread mCaptureThread;
     private static final long CAPTURE_INTERVAL = 10 * 1000;
+    LocationManager mLocationManager;
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -473,20 +474,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .addFormDataPart("myFile", imageFile.getName(), fileBody)
                 .build();
 
-        // Create the request
+//        // Create the request
         final float[] xcoord = new float[1];  // Declare the variables to hold latitude and longitude
         final float[] ycoord = new float[1];
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+            // TODO: Request permissions or handle the lack of permissions
             return;
         }
+
         final String[] concatenatedLocation = new String[1];
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, new OnSuccessListener<Location>() {
@@ -496,57 +492,107 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             xcoord[0] = (float) location.getLatitude();
                             ycoord[0] = (float) location.getLongitude();
                             concatenatedLocation[0] = xcoord[0] + ", " + ycoord[0];
+
+                            // Construct and send the request here
+                            Request request = new Request.Builder()
+                                    .url(URL_TO_SERVER)
+                                    .addHeader("coord", concatenatedLocation[0])
+                                    .addHeader("speed", "30.2125")
+                                    .addHeader("token", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
+                                    .addHeader("email", "john@gmail.com")
+                                    .post(requestBody)
+                                    .build();
+
+                            // Send the request
+                            OkHttpClient client = new OkHttpClient();
+                            client.newCall(request).enqueue(new Callback() {
+                                @Override
+                                public void onFailure(Call call, IOException e) {
+                                    e.printStackTrace();
+                                    // Handle failure
+                                }
+
+                                @Override
+                                public void onResponse(Call call, Response response) throws IOException {
+                                    // Handle response
+                                }
+                            });
                         }
                     }
                 });
 
+//        Location myLocation = getLastKnownLocation();
 
-        Request request = new Request.Builder()
-                .url(URL_TO_SERVER)
-                .addHeader("coord", concatenatedLocation[0])
-                .addHeader("speed", "30.2125")
-                .addHeader("token", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
-                .addHeader("email", "john@gmail.com")
-                .post(requestBody)
-                .build();
+//        fusedLocationClient.getLastLocation();
 
-        try {
-            // Execute the request
-            Response response = client.newCall(request).execute();
-            if (response.isSuccessful()) {
-                String responseData = response.body().string();
-                // Do something with the response data
-                Log.d(TAG, "Response: " + responseData);
-            } else {
-                // Handle error
-                Log.e(TAG, "Request failed: " + response.code() + " - " + response.message());
-            }
-            // Close the response body
-            if (response.body() != null) {
-                response.body().close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            // Handle failure
-            Log.e(TAG, "Error sending image to server: " + e.getMessage());
-        }
+
+        // ✅✅✅✅✅
+//        Request request = new Request.Builder()
+//                .url(URL_TO_SERVER)
+//                .addHeader("coord", concatenatedLocation[0])
+//                .addHeader("speed", "30.2125")
+//                .addHeader("token", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
+//                .addHeader("email", "john@gmail.com")
+//                .post(requestBody)
+//                .build();
+
+//        try {
+//            // Execute the request
+//            Response response = client.newCall(request).execute();
+//            if (response.isSuccessful()) {
+//                String responseData = response.body().string();
+//                // Do something with the response data
+//                Log.d(TAG, "Response: " + responseData);
+//            } else {
+//                // Handle error
+//                Log.e(TAG, "Request failed: " + response.code() + " - " + response.message());
+//            }
+//            // Close the response body
+//            if (response.body() != null) {
+//                response.body().close();
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            // Handle failure
+//            Log.e(TAG, "Error sending image to server: " + e.getMessage());
+//        }
     }
+
 
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 101)
-        {
-            if(resultCode == RESULT_OK)
-            {
+        if (requestCode == 101) {
+            if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "GPS enabled now.", Toast.LENGTH_SHORT).show();
-            }if(resultCode==RESULT_CANCELED) {
-            Toast.makeText(this, "Did not work", Toast.LENGTH_SHORT).show();
-        }
+            }
+            if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Did not work", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
+//    private Location getLastKnownLocation() {
+//        mLocationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+//        List<String> providers = mLocationManager.getProviders(true);
+//        Location bestLocation = null;
+//        for (String provider : providers) {
+//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//
+//                return TODO;
+//            }
+//            Location l = mLocationManager.getLastKnownLocation(provider);
+//            if (l == null) {
+//                continue;
+//            }
+//            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+//                // Found best last known location: %s", l);
+//                bestLocation = l;
+//            }
+//        }
+//        return bestLocation;
+//    }
 
     private static boolean isExternalStorageReadOnly() {
         String extStorageState = Environment.getExternalStorageState();

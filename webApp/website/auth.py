@@ -1,16 +1,16 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, login_required, logout_user, current_user 
+from flask_login import login_user, login_required, logout_user, current_user, UserMixin
 import redis
 import json
 import uuid
 
-landing_bp = Blueprint('landing', __name__)
+# landing_bp = Blueprint('landing', __name__,)
 
-@landing_bp.route('/landing')
-def landing_page():
-    return render_template('landing_page.html', user=current_user)
+# @landing_bp.route('/landing')
+# def landing_page():
+#     return render_template('landing_page.html', user=current_user)
 
 
 redis_client = redis.Redis(
@@ -42,10 +42,11 @@ def login():
                     if check_password_hash(stored_password, password_in):
                         user = User(**decoded_user_data)
                         print(current_user.is_authenticated)
+                        print(user.get_id())
                         login_user(user, remember=True)  # Log in the user
                         print(current_user.is_authenticated)
                         flash('Logged in successfully!', category='success')
-                        return render_template('leaderboard.html', user=current_user)
+                        return redirect(url_for('landing.landing_page'))
                     else:
                         flash('Incorrect email or password. Please try again.', category='error')
                 else:
@@ -56,10 +57,11 @@ def login():
             flash('Email does not exist.', category='error')
 
     # Render the login template for GET requests
-    return render_template('login.html', email=email)
+    return render_template('login.html', user=current_user)
         # Only pass email to the template if the user is logged in
         # email = current_user.email if current_user.is_authenticated else None
         # return render_template("login.html", email=email)
+
 @auth.route('/logout')
 @login_required
 def logout():
@@ -89,11 +91,13 @@ def sign_up():
             score_list = ""
             score_avg = 0.0
             access_token_generate = str(uuid.uuid1())
-            user_id = redis_client.incr('user_id_counter')
+            user_id = email
             hashed_password = generate_password_hash(password1)
             redis_client.hmset(f'user:{user_id}', {'email': email, 'password': hashed_password, 'first_name': first_name, 'access_token': access_token_generate, 'scores': score_list, 'score_avg':score_avg}) 
             redis_client.set(f'email:{email}', user_id)
             flash('Account created successfully! You can now log in.', category='success')
-            return redirect('/login')
-
+            newUser = User(email, hashed_password, first_name, access_token_generate, score_list, score_avg)
+            login_user(newUser, remember=True)
+            return redirect('/landing')
+    
     return render_template("sign_up.html", user=current_user)

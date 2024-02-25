@@ -25,5 +25,6 @@ def getLeaderboard():
     return userlist
 
 @views.route('/leaderboard')
+@login_required
 def leaderboard():
     return render_template('leaderboard.html', user=current_user, leaderboard=getLeaderboard())

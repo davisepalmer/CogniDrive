@@ -33,7 +33,9 @@ def create_app(redis_client):
     @login_manager.user_loader
     def load_user(id):
         # Load user from Redis
-        user_data = redis_client.hgetall(f'user:{id}')
+        user_data = redis_client.hgetall('user:'+id)
+        print("JFHEWOFUEWBF: ", f'user:{id}')
+        print("IS THIS THE DAGGER!!???", id)
         if user_data:
             user_data_str = {key.decode(): value.decode() for key, value in user_data.items()}
             return User(**user_data_str)

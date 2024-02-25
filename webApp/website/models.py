@@ -25,14 +25,14 @@ class User(UserMixin):
     @staticmethod
     def load_user(user_id):
         # Load user data from Redis
+        print("LEBRON JAAAAAMEEEES", user_id)
         user_data = redis_client.hgetall(f'user:{user_id}')
         if user_data:
+            # You should only return the User object if it exists and is active
+            # In Flask-Login, an active user is represented by having is_active property as True
             user = User(**user_data)
-            # Check if password matches (assuming hashed passwords)
-            stored_password = user_data.get('password')
-            print("stored_: ",  stored_password)
-            if stored_password and check_password_hash(stored_password, provided_password):
-                return user
+            user.is_active = True  # Assuming your User class has an is_active attribute
+            return user
         return None
 
     @property
@@ -72,15 +72,6 @@ class User(UserMixin):
         
         # Add email to set to enforce uniqueness
         redis_client.sadd('emails', self.email)
-    def calc_averages():
-        userlist = []
-        for key in redis_client.scan_iter("user:*"):
-            user = json.loads(redis_client.get(key))
-            user['score_avg'] = sum(user['scores'].split(',')) / len(user['scores'].split(','))
-            redis_client.set(key, json.dumps(user))
-            userlist.append((user['name'], user['email'], user['score_avg']))   
-        userlist.sort(key=lambda a: a[2])
-        print(userlist)
 
 class Leaderboard:
     @staticmethod

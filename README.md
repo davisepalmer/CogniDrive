@@ -18,7 +18,8 @@ Here are some photos of our frontend
 
 ![image](https://github.com/davisepalmer/RideSafe/assets/39246454/fbaa4ee7-1dbc-4cd3-af83-ef4edef32420)
 
-![Screenshot 2](screenshots/screenshot2.png)
+![Screenshot 2](screenshots/screenshot2.png) ![image](https://github.com/davisepalmer/RideSafe/assets/39246454/6d1035c3-bbe8-4b81-bff2-cd0302d1742d)
+
 
 ## Technologies Used ⚙️
 Overall we used Python, Java, and Golang, but here is an exhaustive list of our the technologies we used:

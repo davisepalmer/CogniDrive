@@ -1,0 +1,28 @@
+{% extends 'base.html' %}{% block title %}Leaderboard{% endblock %} d
+{% block content %}
+    <div class="container mt-4">
+        <h2>Welcome, {{ user.first_name }}!</h2>
+
+        <h3>Leaderboard</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>User</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set rank = 1 %}
+                {% for i in range(5) %}
+                    <p>User ID: {{ leaderboard[i][1] }}, Score: {{ leaderboard[i][0] }}</p>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>Your Score</h3>
+        <p>Your current score: {{ user.score }}</p>
+
+        <!-- Additional content and functionality as needed -->
+    </div>
+{% endblock %}

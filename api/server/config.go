@@ -33,7 +33,7 @@ func NewRouter() *gin.Engine {
 	router.GET("/testjob", func(c *gin.Context) {
 		for client := range hub.clients {
 			select {
-			case client.send <- []byte("temp-123.txt"):
+			case client.send <- []byte("test2.jpg"):
 			default:
 				close(client.send)
 				delete(hub.clients, client)

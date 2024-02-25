@@ -29,14 +29,14 @@ func Initialize() {
 		fmt.Println("Error occured connecting to database")
 	}
 	fmt.Println("Connected to Database")
-	//addScore(33, "john@gmail.com", "b4313ab0-d389-11ee-a9d2-2977793f77f3")
+	//addScore(33, "john@gmail.com", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
 	return
 }
 
 func addScore(score int, email string, token string) error {
 	fmt.Println("Finding user")
 
-	userId, err := DB.Client.Get(DB.Ctx, "email:"+email).Result()
+	/*userId, err := DB.Client.Get(DB.Ctx, "email:"+email).Result()
 	if err == redis.Nil {
 		//If user doesn't exist
 		fmt.Println("Can't find user")
@@ -45,9 +45,9 @@ func addScore(score int, email string, token string) error {
 		//If error occurs searching database
 		fmt.Println(err)
 		return err
-	}
+	}*/
 
-	userJson, err := DB.Client.HGetAll(DB.Ctx, "user:"+userId).Result()
+	userJson, err := DB.Client.HGetAll(DB.Ctx, "user:"+email).Result()
 	if err == redis.Nil {
 		//If user doesn't exist
 		fmt.Println("Can't find user")
@@ -68,7 +68,7 @@ func addScore(score int, email string, token string) error {
 	} else {
 		scores = userJson["scores"] + "," + strconv.Itoa(score)
 	}
-	err = DB.Client.HSet(DB.Ctx, "user:"+userId, "scores", scores).Err()
+	err = DB.Client.HSet(DB.Ctx, "user:"+email, "scores", scores).Err()
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("Invalid access token")
@@ -85,7 +85,7 @@ func addScore(score int, email string, token string) error {
 	}
 
 	avg := fmt.Sprintf("%.2f", float32(total)/float32(len(s)))
-	err = DB.Client.HSet(DB.Ctx, "user:"+userId, "score_avg", avg).Err()
+	err = DB.Client.HSet(DB.Ctx, "user:"+email, "score_avg", avg).Err()
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("Invalid access token")

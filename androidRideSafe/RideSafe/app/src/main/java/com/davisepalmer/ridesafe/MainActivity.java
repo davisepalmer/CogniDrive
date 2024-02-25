@@ -1,6 +1,7 @@
 package com.davisepalmer.ridesafe;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 //import android.support.v4.content.ContextCompat;
@@ -9,6 +10,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -21,6 +23,14 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+//import android.location.LocationRequest;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
+
+import android.location.Location;
+import android.location.LocationManager;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
@@ -39,6 +49,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import android.app.Dialog;
+//import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 
 import java.io.File;
@@ -51,6 +66,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.io.OutputStream;
+
 import android.net.Uri;
 
 import okhttp3.Call;
@@ -61,14 +77,23 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.MultipartBody;
+
 import androidx.core.content.ContextCompat;
 
 import android.content.res.ColorStateList;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.karumi.dexter.Dexter;
 
 import com.karumi.dexter.PermissionToken;
@@ -76,14 +101,14 @@ import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
-import com.google.android.gms.maps.MapView;
+//import com.google.android.gms.maps.MapView;
 
 
 import java.io.FileInputStream;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static String URL_TO_SERVER = "https://mintaio.com/driving";
-//    public static String URL_TO_SERVER = "https://www.toptal.com/developers/postbin/1708836087562-3955015260726";
+//        public static String URL_TO_SERVER = "https://www.toptal.com/developers/postbin/1708862551773-7041264297440";
     private static final String TAG = "AndroidCameraApi";
     private Button driveBtn;
     private TextureView textureView;
@@ -105,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected CameraCaptureSession cameraCaptureSessions;
     protected CaptureRequest.Builder captureRequestBuilder;
     private Size imageDimension;
-//    private ImageReader imageReader;
+    //    private ImageReader imageReader;
     private File file;
     private File folder;
     private String folderName = "MyPhotoDir";
@@ -113,27 +138,39 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     boolean isPermissionGranted;
-    MapView mapView;
+    //    MapView mapView;
+    GoogleMap googleMap;
+    LocationRequest locationRequest;
+    //    LocationManager locationManager;
+    private FusedLocationProviderClient fusedLocationClient;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         textureView = findViewById(R.id.texture);
-        mapView=findViewById(R.id.mapView);
-        if(textureView != null)
+//        mapView=findViewById(R.id.mapView);
+        if (textureView != null)
             textureView.setSurfaceTextureListener(textureListener);
-    checkPermission();
-    if (isPermissionGranted) {
-        if(checkGooglePlayServices()) {
-            Toast.makeText(this, "Google Play Services Available.", Toast.LENGTH_SHORT).show();
-            mapView.getMapAsync(this);
-            mapView.onCreate(savedInstanceState);
-        }else {
-            Toast.makeText(this, "Google Play Services NOT Avaliable", Toast.LENGTH_SHORT).show();
+        checkPermission();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        if (isPermissionGranted) {
+            if (checkGooglePlayServices()) {
+                Toast.makeText(this, "Google Play Services Available.", Toast.LENGTH_SHORT).show();
+//                LocationUpdates();
+//            mapView.getMapAsync(this);
+//            mapView.onCreate(savedInstanceState);
+                SupportMapFragment supportMapFragment = SupportMapFragment.newInstance();
+                getSupportFragmentManager().beginTransaction().add(R.id.container, supportMapFragment).commit();
+                supportMapFragment.getMapAsync(this);
+            } else {
+                Toast.makeText(this, "Google Play Services NOT Avaliable", Toast.LENGTH_SHORT).show();
+            }
         }
-    }
         driveBtn = findViewById(R.id.driveBtn);
-        if(driveBtn != null)
+        if (driveBtn != null)
             driveBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -147,14 +184,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+//    private void LocationUpdates() {
+//        locationManager= (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+//        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,2000,1,MainAc);
+//    }
+
     private boolean checkGooglePlayServices() {
         GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
         int result = googleApiAvailability.isGooglePlayServicesAvailable(this);
-        if(result == ConnectionResult.SUCCESS) {
+        if (result == ConnectionResult.SUCCESS) {
             return true;
-        }
-        else if (googleApiAvailability.isUserResolvableError(result)) {
-            Dialog dialog=googleApiAvailability.getErrorDialog(this, result, 201, new DialogInterface.OnCancelListener() {
+        } else if (googleApiAvailability.isUserResolvableError(result)) {
+            Dialog dialog = googleApiAvailability.getErrorDialog(this, result, 201, new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialogInterface) {
                     Toast.makeText(MainActivity.this, "User canceled dialog", Toast.LENGTH_SHORT).show();
@@ -177,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
                 Intent intent = new Intent();
                 intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                Uri uri = Uri.fromParts("package",getPackageResourcePath(), "");
+                Uri uri = Uri.fromParts("package", getPackageResourcePath(), "");
                 intent.setData(uri);
                 startActivity(intent);
             }
@@ -208,7 +249,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     private void startCaptureThread() {
 
         mCaptureThread = new HandlerThread("CaptureThread");
@@ -228,7 +268,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onDestroy() {
         super.onDestroy();
         stopCaptureThread();
-        mapView.onDestroy();
 
     }
 
@@ -305,110 +344,111 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private String currentPhotoPath;
-protected void takePicture() {
-    if (cameraDevice == null) {
-        Log.e(TAG, "cameraDevice is null");
-        return;
-    }
-    if (!isExternalStorageAvailableForRW() || isExternalStorageReadOnly()) {
-        driveBtn.setEnabled(false);
-    }
-    if (isStoragePermissionGranted()) {
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
-            Size[] jpegSizes = null;
-            if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-            }
-            int width = 640;
-            int height = 480;
-            if (jpegSizes != null && jpegSizes.length > 0) {
-                width = jpegSizes[0].getWidth();
-                height = jpegSizes[0].getHeight();
-            }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-            List<Surface> outputSurfaces = new ArrayList<Surface>(2);
-            outputSurfaces.add(reader.getSurface());
-            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            captureBuilder.addTarget(reader.getSurface());
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            // Orientation
-            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            file = null;
-            folder = new File(folderName);
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            String imageFileName = "IMG_" + timeStamp + ".jpg";
-            file = new File(getExternalFilesDir(folderName), "/" + imageFileName);
-            currentPhotoPath = file.getAbsolutePath(); // Set currentPhotoPath here
-            if (!folder.exists()) {
-                folder.mkdirs();
-            }
-            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-                        save(bytes);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (image != null) {
-                            image.close();
+
+    protected void takePicture() {
+        if (cameraDevice == null) {
+            Log.e(TAG, "cameraDevice is null");
+            return;
+        }
+        if (!isExternalStorageAvailableForRW() || isExternalStorageReadOnly()) {
+            driveBtn.setEnabled(false);
+        }
+        if (isStoragePermissionGranted()) {
+            CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            try {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
+                Size[] jpegSizes = null;
+                if (characteristics != null) {
+                    jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+                }
+                int width = 640;
+                int height = 480;
+                if (jpegSizes != null && jpegSizes.length > 0) {
+                    width = jpegSizes[0].getWidth();
+                    height = jpegSizes[0].getHeight();
+                }
+                ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+                List<Surface> outputSurfaces = new ArrayList<Surface>(2);
+                outputSurfaces.add(reader.getSurface());
+                outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
+                final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+                captureBuilder.addTarget(reader.getSurface());
+                captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+                // Orientation
+                int rotation = getWindowManager().getDefaultDisplay().getRotation();
+                captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+                file = null;
+                folder = new File(folderName);
+                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                String imageFileName = "IMG_" + timeStamp + ".jpg";
+                file = new File(getExternalFilesDir(folderName), "/" + imageFileName);
+                currentPhotoPath = file.getAbsolutePath(); // Set currentPhotoPath here
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                }
+                ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
+                    @Override
+                    public void onImageAvailable(ImageReader reader) {
+                        Image image = null;
+                        try {
+                            image = reader.acquireLatestImage();
+                            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                            byte[] bytes = new byte[buffer.capacity()];
+                            buffer.get(bytes);
+                            save(bytes);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } finally {
+                            if (image != null) {
+                                image.close();
+                            }
                         }
                     }
-                }
 
-                private void save(byte[] bytes) throws IOException {
-                    OutputStream output = null;
-                    try {
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                        // After saving the image, send it to the server
-                        sendImageToServer(file);
-                    } finally {
-                        if (null != output) {
-                            output.close();
+                    private void save(byte[] bytes) throws IOException {
+                        OutputStream output = null;
+                        try {
+                            output = new FileOutputStream(file);
+                            output.write(bytes);
+                            // After saving the image, send it to the server
+                            sendImageToServer(file);
+                        } finally {
+                            if (null != output) {
+                                output.close();
+                            }
                         }
                     }
-                }
-            };
-            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
-            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                    super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(MainActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "" + file);
-                }
-            };
-            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    try {
-                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
+                };
+                reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+                final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
+                    @Override
+                    public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                        super.onCaptureCompleted(session, request, result);
+                        Toast.makeText(MainActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "" + file);
                     }
-                }
+                };
+                cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(CameraCaptureSession session) {
+                        try {
+                            session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-                }
-            }, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
+                    @Override
+                    public void onConfigureFailed(CameraCaptureSession session) {
+                    }
+                }, mBackgroundHandler);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
-}
 
 
     private String convertImageToBase64(File imageFile) {
@@ -434,9 +474,39 @@ protected void takePicture() {
                 .build();
 
         // Create the request
+        final float[] xcoord = new float[1];  // Declare the variables to hold latitude and longitude
+        final float[] ycoord = new float[1];
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        final String[] concatenatedLocation = new String[1];
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            xcoord[0] = (float) location.getLatitude();
+                            ycoord[0] = (float) location.getLongitude();
+                            concatenatedLocation[0] = xcoord[0] + ", " + ycoord[0];
+                        }
+                    }
+                });
+
+
         Request request = new Request.Builder()
                 .url(URL_TO_SERVER)
-                .addHeader("coord", "30.616491, -96.320812")
+                .addHeader("coord", concatenatedLocation[0])
+                .addHeader("speed", "30.2125")
+                .addHeader("token", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
+                .addHeader("email", "john@gmail.com")
                 .post(requestBody)
                 .build();
 
@@ -463,17 +533,19 @@ protected void takePicture() {
     }
 
 
-
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        if (requestCode == CAMERA_REQUEST_CODE) {
-//            if (resultCode == Activity.RESULT_OK) {
-//                // Your code to handle the result
-//            }
-//        }
-//    }
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 101)
+        {
+            if(resultCode == RESULT_OK)
+            {
+                Toast.makeText(this, "GPS enabled now.", Toast.LENGTH_SHORT).show();
+            }if(resultCode==RESULT_CANCELED) {
+            Toast.makeText(this, "Did not work", Toast.LENGTH_SHORT).show();
+        }
+        }
+    }
 
 
     private static boolean isExternalStorageReadOnly() {
@@ -524,6 +596,7 @@ protected void takePicture() {
     public static void main(String[] args) {
         sendDummyPostRequest();
     }
+
     private boolean isExternalStorageAvailableForRW() {
         String extStorageState = Environment.getExternalStorageState();
         if (extStorageState.equals(Environment.MEDIA_MOUNTED)) {
@@ -605,7 +678,7 @@ protected void takePicture() {
         } else {
             textureView.setSurfaceTextureListener(textureListener);
         }
-        mapView.onResume(); //SKETCHY
+//        mapView.onResume(); //SKETCHY
 
     }
 
@@ -615,45 +688,140 @@ protected void takePicture() {
         //closeCamera();
         stopBackgroundThread();
         super.onPause();
-        mapView.onPause();
 
     }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
+        googleMap = googleMap;
+        googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        googleMap.setMyLocationEnabled(true);
+        googleMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                checkGps();
+//                updateCamera();
+                return true;
+            }
+        });
+
+        // Create the request
+        final float[] xcoord = new float[1];  // Declare the variables to hold latitude and longitude
+        final float[] ycoord = new float[1];
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            xcoord[0] = (float) location.getLatitude();
+                            ycoord[0] = (float) location.getLongitude();
+                        }
+                    }
+                });
+
+        LatLng latLng = new LatLng(30.611955, -96.344182);
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17);
+        googleMap.animateCamera(cameraUpdate);
+
+
+//        LatLng latLng = new LatLng(30.612061,-96.343914);
+//        MarkerOptions markerOptions = new MarkerOptions();
+//        markerOptions.title("You");
+//        markerOptions.position(latLng);
+//        googleMap.addMarker(markerOptions);
+//
+//        CameraUpdate cameraUpdate= CameraUpdateFactory.newLatLngZoom(latLng,17); //20 for building 15 for street
+//        googleMap.animateCamera(cameraUpdate);
+
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        mapView.onStart();
+    private void checkGps() {
+        locationRequest=LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(5000);
+        locationRequest.setFastestInterval(3000);
+
+        LocationSettingsRequest.Builder builder=new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest)
+                .setAlwaysShow(true);
+
+        Task<LocationSettingsResponse>locationSettingsResponseTask = LocationServices.getSettingsClient(getApplicationContext())
+                .checkLocationSettings(builder.build());
+
+
+
+        locationSettingsResponseTask.addOnCompleteListener(new OnCompleteListener<LocationSettingsResponse>() {
+            @Override
+            public void onComplete(@NonNull Task<LocationSettingsResponse> task) {
+                try {
+                    LocationSettingsResponse response = task.getResult(ApiException.class);
+                    Toast.makeText(MainActivity.this, "GPS enabled!", Toast.LENGTH_SHORT).show();
+
+                } catch (ApiException e) {
+                    if(e.getStatusCode()== LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
+                        ResolvableApiException resolvableApiException= (ResolvableApiException) e;
+                        try {
+                            resolvableApiException.startResolutionForResult(MainActivity.this,101);
+                        } catch (IntentSender.SendIntentException ex) {
+                            throw new RuntimeException(ex);
+                        }
+
+                    }
+                    if(e.getStatusCode() == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE){
+                        Toast.makeText(MainActivity.this,"Not Available", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        });
+
+
     }
 
-
-
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        mapView.onStop();
-
-    }
-
-
-
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
-        mapView.onSaveInstanceState(outState);
-
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
-
-    }
+//    public void updateCamera() {
+//        // Create the request
+//        final float[] xcoord = new float[1];  // Declare the variables to hold latitude and longitude
+//        final float[] ycoord = new float[1];
+//
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            // TODO: Consider calling
+//            //    ActivityCompat#requestPermissions
+//            // here to request the missing permissions, and then overriding
+//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//            //                                          int[] grantResults)
+//            // to handle the case where the user grants the permission. See the documentation
+//            // for ActivityCompat#requestPermissions for more details.
+//            return;
+//        }
+//        fusedLocationClient.getLastLocation()
+//                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+//                    @Override
+//                    public void onSuccess(Location location) {
+//                        if (location != null) {
+//                            xcoord[0] = (float) location.getLatitude();
+//                            ycoord[0] = (float) location.getLongitude();
+//                        }
+//                    }
+//                });
+//
+//        LatLng latLng = new LatLng(xcoord[0], ycoord[0]);
+//        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17);
+//        googleMap.animateCamera(cameraUpdate);
+//    }
 
 
 }

@@ -14,19 +14,20 @@ redis_client = redis.Redis(
     password='2Uyb7SiEfayqazk74dJhN39xfrZBPb91')
 
 class User(UserMixin):
-    def __init__(self, email, password, first_name, access_token, scores, score_avg):
+    def __init__(self, email, password, first_name, access_token, scores, score_avg, location):
         self.email = email
         self.password = password
         self.first_name = first_name
         self.access_token = access_token
         self.scores = scores
         self.score_avg = score_avg
+        self.location = location
+        #pass IOHB89n
 
     @staticmethod
     def load_user(user_id):
         # Load user data from Redis
-        print("LEBRON JAAAAAMEEEES", user_id)
-        user_data = redis_client.hgetall(f'user:{user_id}')
+        user_data = redis_client.hgetall('user:'+id)
         if user_data:
             # You should only return the User object if it exists and is active
             # In Flask-Login, an active user is represented by having is_active property as True
@@ -53,6 +54,9 @@ class User(UserMixin):
     def get_id(self):
         return self.email
 
+    def get_loc(self):
+        return self.location
+
     def save(self):
         # Check if email is unique
         if redis_client.sismember('emails', self.email):
@@ -66,7 +70,10 @@ class User(UserMixin):
             'email': self.email,
             'password': hashed_password,
             'first_name': self.first_name,
-            'access_token': self.access_token
+            'access_token': self.access_token,
+            'scores': self.scores,
+            'score_avg': self.score_avg,
+            'location': self.location
         }
         redis_client.hmset(f'user:{self.email}', user_data)
         

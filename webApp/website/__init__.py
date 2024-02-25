@@ -34,8 +34,6 @@ def create_app(redis_client):
     def load_user(id):
         # Load user from Redis
         user_data = redis_client.hgetall('user:'+id)
-        print("JFHEWOFUEWBF: ", f'user:{id}')
-        print("IS THIS THE DAGGER!!???", id)
         if user_data:
             user_data_str = {key.decode(): value.decode() for key, value in user_data.items()}
             return User(**user_data_str)
@@ -44,7 +42,7 @@ def create_app(redis_client):
     @app.route('/')
     def landing_redirect():
         if current_user.is_authenticated:
-            return redirect(url_for('views.leaderboard_page'))  # Redirect to the leaderboard page
+            return redirect(url_for('views.leaderboard'))  # Redirect to the leaderboard page
         else:
             return redirect(url_for('landing.landing_page'))
 

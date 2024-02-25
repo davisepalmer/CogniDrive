@@ -9,34 +9,59 @@
     <!-- MapView -->
 
     <!-- TextureView -->
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/mapView"
-        android:layout_width="match_parent"
-        android:layout_height="569dp"
-        android:layout_marginBottom="16dp" />
 
-    <TextureView
-        android:id="@+id/texture"
+
+    <FrameLayout
+        android:id="@+id/container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="375dp"
+        android:layout_marginBottom="16dp"
+        android:layout_weight="1">
+
+    </FrameLayout>
 
     <!-- Button -->
-    <Button
-        android:id="@+id/driveBtn"
-        android:layout_width="wrap_content"
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#17A33B"
-        android:minWidth="175dp"
-        android:minHeight="60dp"
-        android:paddingStart="30dp"
-        android:paddingEnd="30dp"
-        android:text="Start Drive"
-        android:textColor="@android:color/white"
-        android:textSize="18sp" />
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:scaleX="2"
+            android:scaleY="2"
+            android:text="Your Score: 82"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/driveBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#17A33B"
+            android:minWidth="175dp"
+            android:minHeight="60dp"
+            android:paddingStart="30dp"
+            android:paddingEnd="30dp"
+            android:text="Start Drive"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+    </LinearLayout>
+    <TextureView
+        android:id="@+id/texture"
+        android:layout_width="15dp"
+        android:layout_height="44dp"
+        android:layout_weight="1"
+        android:scaleY=".01" />
+
 
 </LinearLayout>

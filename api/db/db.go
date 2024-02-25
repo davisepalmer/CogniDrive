@@ -27,13 +27,14 @@ func Initialize() {
 	_, err := DB.Client.Ping(DB.Ctx).Result()
 	if err != nil {
 		fmt.Println("Error occured connecting to database")
+		return
 	}
 	fmt.Println("Connected to Database")
 	//addScore(33, "john@gmail.com", "1096a158-d3a5-11ee-a9d2-2977793f77f3")
 	return
 }
 
-func addScore(score int, email string, token string) error {
+func AddScore(score int, email string, token string) error {
 	fmt.Println("Finding user")
 
 	/*userId, err := DB.Client.Get(DB.Ctx, "email:"+email).Result()

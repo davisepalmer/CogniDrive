@@ -3,8 +3,9 @@ module github.com/davisepalmer/RideSafe/api
 go 1.22
 
 require (
-	github.com/derekstavis/go-qs v0.0.0-20180720192143-9eef69e6c4e7
+	github.com/buger/jsonparser v1.1.1
 	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/redis/go-redis/v9 v9.5.1
 )

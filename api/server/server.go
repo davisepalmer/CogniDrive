@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"github.com/davisepalmer/RideSafe/api/db"
 	"github.com/gin-gonic/gin"
 	"os"
 )
@@ -13,11 +15,12 @@ func Initialize() {
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		clients:    make(map[*Client]bool),
-		jobs:       make([]Job, 100),
+		Clients:    make(map[*Client]bool),
+		//jobs:       make([]Job, 100),
 	}
 	go hub.run()
-
+	fmt.Println("Starting Database...")
+	db.Initialize()
 	r = NewRouter()
 	port := os.Getenv("PORT")
 	r.Run(":" + port)
@@ -27,11 +30,20 @@ func (h *Hub) run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
+			h.Clients[client] = true
 		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
+			if _, ok := h.Clients[client]; ok {
+				delete(h.Clients, client)
 				close(client.send)
+			}
+		case message := <-h.broadcast:
+			for client := range h.Clients {
+				select {
+				case client.send <- message:
+				default:
+					close(client.send)
+					delete(h.Clients, client)
+				}
 			}
 		}
 	}

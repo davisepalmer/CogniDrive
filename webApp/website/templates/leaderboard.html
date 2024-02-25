@@ -14,8 +14,8 @@
             </thead>
             <tbody>
                 {% set rank = 1 %}
-                {% for user_id, score in leaderboard %}
-                    <p>User ID: {{ user_id }}, Score: {{ score }}</p>
+                {% for i in range(5) %}
+                    <p>User ID: {{ leaderboard[i][1] }}, Score: {{ leaderboard[i][0] }}</p>
                 {% endfor %}
             </tbody>
         </table>

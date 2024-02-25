@@ -12,6 +12,18 @@ redis_client = redis.Redis(
 
 views = Blueprint('views', __name__)
 
-@views.route('/landing')
-def landing_page():
-    return render_template('landing_page.html', user=current_user)
+def getLeaderboard():
+    # Get the top 10 users from Redis
+    userlist = []
+    for key in redis_client.scan_iter("user:*"):
+        user_data = redis_client.hgetall(key.decode())
+        #print(user_data)
+        decoded_user_data = {key.decode(): value.decode() for key, value in user_data.items()}
+        score = decoded_user_data.get('score_avg')
+        userlist.append((int(str(decoded_user_data.get('score_avg'))),decoded_user_data.get('first_name')))
+        userlist.sort(key=lambda a: a[0])
+    return userlist
+
+@views.route('/leaderboard')
+def leaderboard():
+    return render_template('leaderboard.html', user=current_user, leaderboard=getLeaderboard())

@@ -24,7 +24,7 @@ def create_app(redis_client):
     app.register_blueprint(views)
     app.register_blueprint(auth)
 
-    from .models import User, Leaderboard
+    from .models import User#, Leaderboard
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'  # Redirect unauthorized users to the login page

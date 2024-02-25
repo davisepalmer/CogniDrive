@@ -79,26 +79,3 @@ class User(UserMixin):
         
         # Add email to set to enforce uniqueness
         redis_client.sadd('emails', self.email)
-
-class Leaderboard:
-    @staticmethod
-    def add_score(user_id, score):
-        redis_client.zadd('leaderboard', {user_id: score})
-
-    @staticmethod
-    def get_leaderboard(limit=10):
-        # Retrieve the leaderboard from Redis
-        leaderboard = redis_client.zrevrange('leaderboard', 0, limit - 1, withscores=True)
-        return leaderboard
-
-    @staticmethod
-    def get_user_score(user_id):
-        # Get the score of a specific user from the leaderboard
-        score = redis_client.zscore('leaderboard', user_id)
-        return score
-
-    @staticmethod
-    def get_user_rank(user_id):
-        # Get the rank of a specific user in the leaderboard
-        rank = redis_client.zrevrank('leaderboard', user_id)
-        return rank + 1 if rank is not None else None

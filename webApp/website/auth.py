@@ -78,6 +78,20 @@ def sign_up():
         password2 = request.form.get('password2')
         user_location = request.form.get('state')
 
+        # #check password
+        upper = False
+        lower = False
+        num = False
+        space = False 
+        for i in password1:
+            if(i.isupper()): 
+                upper = True
+            elif(i.islower()):
+                lower = True
+            elif(i.isdigit()):
+                num = True
+            elif(i.isspace()):
+                space = True
         if redis_client.exists(f'email:{email}'):
             flash('Email already exists.', category='error')
         elif len(email) < 4:
@@ -86,9 +100,11 @@ def sign_up():
             flash('First name must be greater than 1 character.', category='error')
         elif password1 != password2:
             flash('Passwords do not match.', category='error')
-        elif len(password1) < 3:
-            flash('Password must be at least 3 characters.', category='error')
+        elif (len(password1) < 7 or not upper or not lower or not num or space):
+            flash('Password invalid', category='error')
         else:
+            #user_location = str(location)
+            #print(user_location)
             score_list = ""
             score_avg = 0.0
             access_token_generate = str(uuid.uuid1())

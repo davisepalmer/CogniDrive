@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for
 from flask_login import login_required, current_user
-from .models import Leaderboard, User
+#from .models import Leaderboard, User
 import json
 import redis
 

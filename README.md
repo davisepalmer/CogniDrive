@@ -1,5 +1,5 @@
 # RideSafe 🚗
-RideSafe is an all in one system that encourages safer driving through an incenitivizing leaderboard. We start off with a mobile app that runs on your phone that returns a dash cam photo to our server during your drive where we 
+RideSafe is an all in one system that encourages safer driving through an incenitivizing leaderboard. We start off with a mobile app that runs on your phone that returns a dash cam photo to our server during your drive where we run object recognition on the photos, calculate the distance between the user car and the car it is following. Driver scores are generated with the vehicle speed, speed limit, and follow distance. These scores are stored in a Redis database which then allows users to view their scores and a leaderboard.
 
 ## Features
 List the key features of your project.
